@@ -1,0 +1,48 @@
+pipeline {
+  agent any
+
+  environment {
+    REPO_URL = "https://github.com/atharvp2722/my-portfolio"
+    GH_TOKEN_CRED = "github-token"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Build') {
+      steps {
+        echo "No build needed for static HTML/CSS"
+      }
+    }
+
+    stage('Deploy to GitHub Pages') {
+      steps {
+        withCredentials([string(credentialsId: env.GH_TOKEN_CRED, variable: 'GITHUB_TOKEN')]) {
+          sh '''
+            git config user.email "jenkins@localhost"
+            git config user.name "jenkins"
+
+            git checkout --orphan gh-pages
+
+            git rm -rf --cached . || true
+
+            git add -A
+            git commit -m "Deploy: Build #${BUILD_NUMBER}" || echo "No changes"
+
+            git push --force "https://${GITHUB_TOKEN}@github.com/atharvp2722/my-portfolio" gh-pages
+          '''
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "Deployed to GitHub Pages successfully!"
+    }
+  }
+}
